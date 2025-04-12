@@ -26,10 +26,11 @@ export const createBatch = async (
     current_pig: number,
     race: string,
     average_weight: number,
+    phase: number,
 ) => {
     const date = new Date();
     const { rows } = await pool.query(
-        "INSERT INTO lotes (id_usuario, nombre_lote, numero_cerdos_registrado, numeros_cerdos_actuales, raza, peso_promedio, fecha_creacion) VALUES ($1, $2, $3, $4, $5, $6, $7) returning id_lote",
+        "INSERT INTO lotes (id_usuario, nombre_lote, numero_cerdos_registrado, numeros_cerdos_actuales, raza, peso_promedio, fecha_creacion, fase) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) returning id_lote",
         [
             user_id,
             batch_name,
@@ -38,6 +39,7 @@ export const createBatch = async (
             race,
             average_weight,
             date,
+            phase
         ],
     );
     return rows[0];

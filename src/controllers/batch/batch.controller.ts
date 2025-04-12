@@ -34,9 +34,9 @@ export const getBatchById = async (req: Request, res: Response) => {
 };
 
 export const createBatch = async (req: Request, res: Response) => {
-    const { user_id, batch_name, pigs, race, average_weight } = req.body;
+    const { user_id, batch_name, pigs, race, average_weight, phase } = req.body;
     try {
-        const data = await createBatchUser(user_id, batch_name, pigs, race, average_weight);
+        const data = await createBatchUser(user_id, batch_name, pigs, race, average_weight, phase);
 
         await clearCache(`batch:${user_id}`);
         await clearCache(`home:${user_id}`);

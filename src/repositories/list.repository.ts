@@ -41,3 +41,18 @@ export const getRaceList = async (race_type_id: number) => {
     );
     return rows;
 };
+
+export const getPhaseList = async () => {
+    const { rows } = await pool.query(
+        "SELECT * FROM fases",
+    );
+    return rows;
+};
+
+export const getPhaseById = async (phase_id: number) => {
+    const { rows } = await pool.query(
+        "SELECT * FROM fases WHERE id_fase = $1",
+        [phase_id],
+    );
+    return rows;
+};

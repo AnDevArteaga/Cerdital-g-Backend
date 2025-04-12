@@ -20,3 +20,7 @@ export interface RaceTypeResponse extends ListResponse {
 export interface RaceResponse extends ListResponse {
     race: any[];
 }
+
+export interface PhaseResponse extends ListResponse {
+    phaseList: any[];
+}

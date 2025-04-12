@@ -8,6 +8,7 @@ export interface Feeding {
     amount: number;
     const: number;
     date_created: string;
+    batch_name: string;
 }
 
 export interface FeedingResponse {

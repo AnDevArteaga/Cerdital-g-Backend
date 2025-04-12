@@ -5,13 +5,29 @@ import {
 } from "../../repositories/batch.repository";
 import { createCost } from "../../repositories/cost.repository";
 import { createProgress } from "../../repositories/progress.repository";
+import { getPhaseById } from "../../repositories/list.repository";
+
 
 
 export const getBatchByIdUser = async (user_id: number) => {
     const batch = await getBatchById(user_id);
-    console.log(batch);
     if (batch.length < 1) throw new Error("No has creado ningún lote");
-    return batch;
+
+    // Reemplazar el ID de fase por el nombre
+    const batchWithPhaseName = await Promise.all(
+        batch.map(async (item) => {
+            const phaseData = await getPhaseById(item.fase);
+            const phase = Array.isArray(phaseData) ? phaseData[0] : phaseData;
+
+            return {
+                ...item,
+                fase: phase?.nombre_fase || "Fase desconocida",
+            };
+        })
+    );
+
+    console.log(batchWithPhaseName);
+    return batchWithPhaseName;
 };
 
 export const createBatchUser = async (
@@ -20,11 +36,13 @@ export const createBatchUser = async (
     pigs: number,
     race: string,
     average_weight: number,
+    phase: number
 ) => {
     if (pigs < 1) throw new Error("Debe registrar al menos 1 cerdo");
     if (!average_weight) throw new Error("No hay peso promedio");
     if (!race) throw new Error("No hay raza");
     if (!batch_name) throw new Error("No hay nombre de lote");
+    if (!phase) throw new Error("No hay fase");
     const pig_registered = pigs;
     const current_pig = pigs;
     const batchCreated = await createBatch(
@@ -34,6 +52,7 @@ export const createBatchUser = async (
         current_pig,
         race,
         average_weight,
+        phase
     );
     console.log("batch", batchCreated);
     const batch_id = batchCreated.id_lote;

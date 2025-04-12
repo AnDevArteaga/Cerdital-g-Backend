@@ -1,9 +1,27 @@
 import { createFeeding, getFeedingById, updatedFeeding } from "../../repositories/feeding.repository";
+import { getOneBatchById } from "../../repositories/batch.repository";
 
 export const getFeedingByIdUser = async (user_id: number) => {
     const feeding = await getFeedingById(user_id);
-    if (feeding.length < 1) throw new Error("No has creado ningúna alimentación");
-    return feeding;
+    if (feeding.length < 1) throw new Error("No has creado ninguna alimentación");
+    console.log(feeding, 'feeding');
+    const feedingWithLoteName = await Promise.all(
+        feeding.map(async (item) => {
+            console.log(item, 'item');
+            const lote = await getOneBatchById(item.id_lote);
+            const loteData = Array.isArray(lote) ? lote[0] : lote;
+            console.log(lote);
+            console.log(loteData);
+
+            return {
+                ...item,
+                nombre_lote: loteData?.nombre_lote || "Lote desconocido",
+            };
+        })
+    );
+
+    console.log(feedingWithLoteName);
+    return feedingWithLoteName;
 };
 
 export const createFeedingUser = async (
