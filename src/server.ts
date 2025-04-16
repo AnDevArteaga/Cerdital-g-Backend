@@ -6,6 +6,8 @@ import helmet from 'helmet';
 import { checkConnection } from './config/db';
 import { checkConnection as checkRedis } from './config/redis';
 import "./jobs/agendaCronJob"
+import swaggerUi from 'swagger-ui-express';
+import { swaggerSpec } from './swagger';
 
 checkRedis().then(() => {
     console.log("Redis Conectado");
@@ -27,6 +29,7 @@ dotenv.config();
 
 const app = express();
 const PORT = 5000;
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 app.use(express.json());
 app.use(morgan('dev'));
 app.use(helmet());
