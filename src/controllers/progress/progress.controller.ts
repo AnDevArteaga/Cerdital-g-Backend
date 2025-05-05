@@ -13,7 +13,6 @@ export const getProgressById = async (req: Request, res: Response) => {
     const { user_id } = req.params;
     try {
         const data = await getProgressByIdUser(Number(user_id));
-        console.log('list progress', data);
         const meta: Meta = {
             status: 200,
             message: "Progresos encontrados",

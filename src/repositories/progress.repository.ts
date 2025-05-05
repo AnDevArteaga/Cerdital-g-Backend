@@ -16,7 +16,7 @@ export const createProgress = async (
     weekly_average_weight: number,
     mortality: number,
     user_id: number,
-    phase: string
+    phase: number
 ) => {
     const { rows } = await pool.query(
         "INSERT INTO progreso (id_lote, fecha_pesaje, record_peso_promedio, mortalidad, id_usuario, fase) VALUES ($1, $2, $3, $4, $5, $6)",
@@ -48,7 +48,7 @@ export const updateProgress = async (
     date_weight: string,
     weekly_average_weight: number,
     mortality: number,
-    phase: string
+    phase: number
 
 ) => {
     const { rowCount } = await pool.query(

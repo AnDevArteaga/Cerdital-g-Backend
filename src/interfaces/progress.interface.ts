@@ -5,6 +5,7 @@ interface Record {
     progress_id: number;
     date_weight: Date;
     weekly_average_weight: number;
+    phase: number;
 }
 
 export interface ListProgressLote {

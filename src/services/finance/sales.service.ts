@@ -71,6 +71,7 @@ export const createSalesUser = async (
             undefined,
             undefined,
             undefined,
+            undefined,
             newStatus
         );
 

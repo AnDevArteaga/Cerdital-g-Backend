@@ -4,7 +4,6 @@ import {
     updatedBatch,
 } from "../../repositories/batch.repository";
 import { createCost } from "../../repositories/cost.repository";
-import { createProgress } from "../../repositories/progress.repository";
 import { getPhaseById } from "../../repositories/list.repository";
 
 

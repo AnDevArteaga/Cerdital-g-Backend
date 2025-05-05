@@ -14,13 +14,26 @@ import {
     updatedBatch,
 } from "../../repositories/batch.repository";
 
+import { getPhaseById } from "../../repositories/list.repository";
+
 export const getProgressByIdUser = async (user_id: number) => {
     if (!user_id) throw new Error("Sin usuario");
     const progress = await getProgressById(user_id);
     console.log(progress);
     if (progress.length < 1) throw new Error("No has creado ningún progreso");
-    const transformed = tranformProgress(progress);
-    console.log(JSON.stringify(transformed, null, 2));
+    const progressWithPhaseName = await Promise.all(
+            progress.map(async (item) => {
+                const phaseData = await getPhaseById(item.fase);
+                const phase = Array.isArray(phaseData) ? phaseData[0] : phaseData;
+    
+                return {
+                    ...item,
+                    fase: phase?.nombre_fase || "Fase desconocida",
+                };
+            })
+        );
+    const transformed = tranformProgress(progressWithPhaseName);
+    console.log(JSON.stringify(transformed, null, 2), 'tranform');
     return transformed;
 };
 
@@ -29,7 +42,7 @@ export const createProgressUser = async (
     date_weight: string,
     weekly_average_weight: number,
     mortality: number,
-    phase: string,
+    phase: number,
     user_id: number,
 ) => {
     if (!batch_id) throw new Error("No hay lote seleccionado");
@@ -88,6 +101,7 @@ export const createProgressUser = async (
         undefined,
         undefined,
         newCurrent,
+        mortality,
         phase,
     );
 
@@ -106,6 +120,7 @@ export const createProgressUser = async (
         const newStatus = false;
         const updatedBatchStatus = await updatedBatch(
             batch_id,
+            undefined,
             undefined,
             undefined,
             undefined,
@@ -132,7 +147,7 @@ export const updateProgressUser = async (
     date_weight: string,
     weekly_average_weight: number,
     mortality: number,
-    phase: string,
+    phase: number,
 ) => {
     if (!progress_id) throw new Error("No hay progreso seleccionado");
     if (!batch_id) throw new Error("No hay lote seleccionado");
@@ -207,6 +222,7 @@ export const updateProgressUser = async (
             undefined,
             undefined,
             undefined,
+            undefined,
             newStatus,
         );
 
@@ -224,7 +240,7 @@ export const updateProgressUser = async (
 
 function tranformProgress(progress: any[]): Progress {
     const lotesMap = new Map<number, ListProgressLote>();
-
+    console.log(progress, 'progress');
     progress.forEach((item) => {
         if (!lotesMap.has(item.id_lote)) {
             lotesMap.set(item.id_lote, {
@@ -238,6 +254,7 @@ function tranformProgress(progress: any[]): Progress {
             progress_id: item.id_progreso,
             date_weight: item.fecha_pesaje,
             weekly_average_weight: item.record_peso_promedio,
+            phase: item.fase,
         });
     });
 

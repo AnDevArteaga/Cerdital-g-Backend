@@ -1,6 +1,7 @@
 import { getLotesActive } from "../../repositories/home.repository";
 import { getCostById } from "../../repositories/cost.repository";
 import { getSalesById } from "../../repositories/sales.repository";
+import { getPhaseById } from "../../repositories/list.repository";
 
 export const getDataHome = async (user_id: number) => {
     if (!user_id) throw new Error("Sin ID de usuario");
@@ -14,7 +15,20 @@ export const getDataHome = async (user_id: number) => {
     const profit = totalSales - totalCosts;
     const batchsActive = batchs.length
 
-    return { batchsActive, totalCosts, totalSales, profit, batchsByPhase }
+        // Reemplazar el ID de fase por el nombre
+    const batchByPhaseWithPhaseName = await Promise.all(
+        batchsByPhase.map(async (item) => {
+                const phaseData = await getPhaseById(Number(item.phase));
+                const phase = Array.isArray(phaseData) ? phaseData[0] : phaseData;
+    
+                return {
+                    ...item,
+                    phase: phase?.nombre_fase || "Fase desconocida",
+                };
+            })
+        );
+
+    return { batchsActive, totalCosts, totalSales, profit, batchsByPhase:batchByPhaseWithPhaseName }
 };
 
 

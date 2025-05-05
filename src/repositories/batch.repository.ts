@@ -63,7 +63,8 @@ export const updatedBatch = async (
     average_weight?: number,
     number_of_pigs?: number,
     newCurrent?: number,
-    phase?: string,
+    mortality?: number,
+    phase?: number,
     status?: boolean
    
 ) => {
@@ -88,6 +89,11 @@ export const updatedBatch = async (
         fields.push("numeros_cerdos_actuales = $"+(fields.length+1));
         values.push(newCurrent);
     }
+    
+    if (mortality !== undefined) {
+        fields.push("mortalidad = $"+(fields.length+1));
+        values.push(mortality);
+    }
     if (phase !== undefined) {
         fields.push("fase = $"+(fields.length+1));
         values.push(phase);
@@ -96,6 +102,8 @@ export const updatedBatch = async (
         fields.push("activo = $"+(fields.length+1));
         values.push(status);
     }
+
+
 
     // Si no hay campos que actualizar, salir
     if (fields.length === 0) {
