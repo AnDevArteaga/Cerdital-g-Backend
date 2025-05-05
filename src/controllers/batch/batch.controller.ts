@@ -14,13 +14,15 @@ export const getBatchById = async (req: Request, res: Response) => {
         const data = await getBatchByIdUser(Number(user_id));
 
          // Guardar en caché por 1 hora (3600 segundos)
-        const redisResponse = await redis.set(`batch:${user_id}`, JSON.stringify(data), "EX", 3600);
-        console.log(redisResponse);
+        if (data.length > 0) {
+            const redisResponse = await redis.set(`batch:${user_id}`, JSON.stringify(data), "EX", 3600);
+            console.log(redisResponse);
+        }
         const response: BatchResponse = {
             batch: data,
             meta: {
                 status: 200,
-                message: "Lote encontrado",
+                message: data.length > 1 ? "Lote encontrado": "No has creado ningún lote",
             },
         };
         res.status(200).json(response);

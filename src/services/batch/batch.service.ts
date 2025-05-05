@@ -10,7 +10,7 @@ import { getPhaseById } from "../../repositories/list.repository";
 
 export const getBatchByIdUser = async (user_id: number) => {
     const batch = await getBatchById(user_id);
-    if (batch.length < 1) throw new Error("No has creado ningún lote");
+    if (batch.length < 1) return [];
 
     // Reemplazar el ID de fase por el nombre
     const batchWithPhaseName = await Promise.all(
