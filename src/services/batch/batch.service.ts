@@ -4,9 +4,11 @@ import {
     updatedBatch,
 } from "../../repositories/batch.repository";
 import { createCost } from "../../repositories/cost.repository";
-import { getPhaseById } from "../../repositories/list.repository";
-
-
+import {
+    getPhaseById,
+    getRaceById,
+    getRaceByName,
+} from "../../repositories/list.repository";
 
 export const getBatchByIdUser = async (user_id: number) => {
     const batch = await getBatchById(user_id);
@@ -18,11 +20,38 @@ export const getBatchByIdUser = async (user_id: number) => {
             const phaseData = await getPhaseById(item.fase);
             const phase = Array.isArray(phaseData) ? phaseData[0] : phaseData;
 
+            let raceTransformed = item.raza;
+            try {
+                const raceData = await getRaceByName(item.raza);
+                console.log("raceData", raceData);
+                if (raceData) {
+                    const raceType = await getRaceById(raceData.id_tipo_raza);
+                    console.log("raceType", raceType);
+                    if (raceType) {
+                        raceTransformed = {
+                            tiporaza: {
+                                id: raceData.id_tipo_raza,
+                                nombre: raceType.tipo_raza,
+                            },
+                            raza: {
+                                id: raceData.id,
+                                nombre: raceData.nombre_raza,
+                            },
+                        };
+                    }
+                }
+            } catch (error) {
+                console.error("Error al obtener raza:", error);
+            }
             return {
                 ...item,
-                fase: phase?.nombre_fase || "Fase desconocida",
+                fase: {
+                    id: phase?.id || item.fase,
+                    nombre: phase?.nombre_fase || "Fase desconocida",
+                },
+                raza: raceTransformed,
             };
-        })
+        }),
     );
 
     console.log(batchWithPhaseName);
@@ -35,7 +64,7 @@ export const createBatchUser = async (
     pigs: number,
     race: string,
     average_weight: number,
-    phase: number
+    phase: number,
 ) => {
     if (pigs < 1) throw new Error("Debe registrar al menos 1 cerdo");
     if (!average_weight) throw new Error("No hay peso promedio");
@@ -51,7 +80,7 @@ export const createBatchUser = async (
         current_pig,
         race,
         average_weight,
-        phase
+        phase,
     );
     console.log("batch", batchCreated);
     const batch_id = batchCreated.id_lote;
@@ -80,7 +109,7 @@ export const editBatchUser = async (
     );
     if (
         race === undefined && average_weight === undefined &&
-        number_of_pigs === undefined || number_of_pigs === 0
+            number_of_pigs === undefined || number_of_pigs === 0
     ) {
         throw new Error("No hay datos para actualizar");
     }
@@ -111,12 +140,11 @@ export const editBatchUser = async (
     if (!updatedBatchRow || typeof updatedBatchRow !== "object") {
         throw new Error("Error inesperado al actualizar el lote");
     }
-        const { rowCount } = updatedBatchRow;
-        if (rowCount === 0) throw new Error("Error al actualizar el lote");
+    const { rowCount } = updatedBatchRow;
+    if (rowCount === 0) throw new Error("Error al actualizar el lote");
 
     return "Lote actualizado exitosamente";
-    }
-
+};
 
 const getCurrentPigs = (
     num_pigs: number,
@@ -135,4 +163,3 @@ const getCurrentPigs = (
     }
     return newCurrent;
 };
-

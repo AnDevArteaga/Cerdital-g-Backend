@@ -42,10 +42,30 @@ export const getRaceList = async (race_type_id: number) => {
     return rows;
 };
 
+//Obtener raza por nomnre
+export const getRaceByName = async (name: string) => {
+    console.log('name', name)
+    const { rows } = await pool.query(
+        "SELECT * FROM raza WHERE nombre_raza = $1",
+        [name],
+    );
+    return rows[0] || [];
+};
+
+//Obtener un tipo de raza por id
+export const getRaceById = async (id: number) => {
+    console.log('id', id)
+    const { rows } = await pool.query(
+        "SELECT tipo_raza FROM tipo_raza WHERE id = $1",
+        [id],
+    );
+    return rows[0] || [];
+};
+
 export const getPhaseList = async () => {
     const { rows } = await pool.query(
         "SELECT * FROM fases",
-    );
+    );  
     return rows;
 };
 
@@ -53,6 +73,14 @@ export const getPhaseById = async (phase_id: number) => {
     const { rows } = await pool.query(
         "SELECT * FROM fases WHERE id_fase = $1",
         [phase_id],
+    );
+    return rows;
+};
+
+export const getPhaseByName = async (name: string) => {
+    const { rows } = await pool.query(
+        "SELECT * FROM fases WHERE nombre_fase = $1",
+        [name],
     );
     return rows;
 };

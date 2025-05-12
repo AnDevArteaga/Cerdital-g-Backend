@@ -10,10 +10,10 @@ export const getAgendaById = async (user_id: number) => {
 };
 
 export const getAgendasByDate = async (date: Date) => {
-    console.log(date);
     const today = date.toISOString().split("T")[0];
-
-    const query = `SELECT * FROM agenda WHERE fecha_evento = $1`;
+    console.log("date", date);
+    console.log("today", today);
+    const query = `SELECT * FROM agenda WHERE fecha_evento::date = $1`;
     const values = [today];
 
     try {

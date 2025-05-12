@@ -51,11 +51,12 @@ export const userLogin = async (
 
     const updatedToken = await updateToken(user.id_usuario, token);
     if (updatedToken === 0) throw new Error("Error al actualizar el token");
-
+    const userId = user.id_usuario;
     const AuthToken = jwt.sign(
-        { },
+        {userId},
         process.env.JWT_SECRET!,
     );
+    console.log(AuthToken);
     const response = {
         id: user.id_usuario,
         email: user.correo,

@@ -22,18 +22,19 @@ export const getProgressByIdUser = async (user_id: number) => {
     console.log(progress);
     if (progress.length < 1) throw new Error("No has creado ningún progreso");
     const progressWithPhaseName = await Promise.all(
-            progress.map(async (item) => {
-                const phaseData = await getPhaseById(item.fase);
-                const phase = Array.isArray(phaseData) ? phaseData[0] : phaseData;
-    
-                return {
-                    ...item,
-                    fase: phase?.nombre_fase || "Fase desconocida",
-                };
-            })
-        );
+        progress.map(async (item) => {
+            const phaseData = await getPhaseById(item.fase);
+            const phase = Array.isArray(phaseData) ? phaseData[0] : phaseData;
+
+            return {
+                ...item,
+                fase: phase?.nombre_fase || "Fase desconocida",
+            };
+        }),
+    );
+    console.log(progressWithPhaseName, "progressWithPhaseName");
     const transformed = tranformProgress(progressWithPhaseName);
-    console.log(JSON.stringify(transformed, null, 2), 'tranform');
+    console.log(JSON.stringify(transformed, null, 2), "tranform");
     return transformed;
 };
 
@@ -55,21 +56,20 @@ export const createProgressUser = async (
     if (!phase) throw new Error("No hay fase");
 
     let current_pig = 0;
-
+    console.log("mortality", mortality);
     // Si la mortalidad es mayor a 0, validar contra current pigs
-    if (mortality > 0) {
-        const batch = await getOneBatchById(batch_id);
-        if (batch.length < 1) throw new Error("No existe el lote");
+    const batch = await getOneBatchById(batch_id);
+    if (batch.length < 1) throw new Error("No existe el lote");
+    console.log("batch", batch);
+    current_pig = batch[0].numeros_cerdos_actuales;
 
-        current_pig = batch[0].numeros_cerdos_actuales;
-
-        if (current_pig < mortality) {
-            throw new Error(
-                "No puedes registrar una mortalidad mayor a la cantidad de cerdos en el lote",
-            );
-        }
+    if (current_pig < mortality) {
+        throw new Error(
+            "No puedes registrar una mortalidad mayor a la cantidad de cerdos en el lote",
+        );
     }
 
+    console.log("current_pig", current_pig);
     const progressCreated = await createProgress(
         batch_id,
         date_weight,
@@ -79,7 +79,6 @@ export const createProgressUser = async (
         phase,
     );
     if (progressCreated === 0) throw new Error("Error al crear el progreso");
-
     const updatedPhaseBatch = await updatedBatch(
         batch_id,
         undefined,
@@ -93,15 +92,19 @@ export const createProgressUser = async (
     if (updatedPhaseBatch === 0) throw new Error("Error al actualizar el lote");
     // Calcular nuevo número de cerdos
     const newCurrent = current_pig - mortality;
-
+    console.log("newCurrent", newCurrent);
     // Actualizar el lote
+    const progressBatch = await getProgressById(user_id);
+    const progressTransformed = tranformProgress(progressBatch);
+    const newMortality = progressTransformed.progress.find((item) => item.batch_id === batch_id)?.mortality || 0;
+
     const batchUpdated = await updatedBatch(
         batch_id,
         undefined,
         undefined,
         undefined,
         newCurrent,
-        mortality,
+        newMortality,
         phase,
     );
 
@@ -159,6 +162,7 @@ export const updateProgressUser = async (
     if (!phase) throw new Error("No hay fase");
 
     let current_pig = 0;
+    let current_mortality = 0;
 
     // Si la mortalidad es mayor a 0, validar contra current pigs
     if (mortality > 0) {
@@ -166,6 +170,8 @@ export const updateProgressUser = async (
         if (batch.length < 1) throw new Error("No existe el lote");
 
         current_pig = batch[0].numeros_cerdos_actuales;
+        current_mortality = batch[0].mortalidad;
+
 
         if (current_pig < mortality) {
             throw new Error(
@@ -190,7 +196,7 @@ export const updateProgressUser = async (
 
     // Calcular nuevo número de cerdos
     const newCurrent = current_pig - mortality;
-
+    
     // Actualizar el lote
     const batchUpdated = await updatedBatch(
         batch_id,
@@ -238,14 +244,24 @@ export const updateProgressUser = async (
     return "Progreso actualizado exitosamente";
 };
 
+
+
 function tranformProgress(progress: any[]): Progress {
     const lotesMap = new Map<number, ListProgressLote>();
-    console.log(progress, 'progress');
+    const mortality: Record<number, number> = {};
+    console.log(progress, "progress");
     progress.forEach((item) => {
+        const id = item.id_lote;
+        if (!mortality[id]) {
+            mortality[id] = 0;
+        }
+        mortality[id] += item.mortalidad;
+
+        console.log(mortality, "mortalidad");
         if (!lotesMap.has(item.id_lote)) {
             lotesMap.set(item.id_lote, {
                 batch_id: item.id_lote,
-                mortality: item.mortalidad,
+                mortality: 0,
                 goal_average_weight: item.peso_promedio_objetivo,
                 record: [],
             });
@@ -258,5 +274,8 @@ function tranformProgress(progress: any[]): Progress {
         });
     });
 
+    lotesMap.forEach((lote, id) => {
+        lote.mortality = mortality[id] || 0;
+    });
     return { progress: Array.from(lotesMap.values()) };
 }

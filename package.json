@@ -34,7 +34,7 @@
     "swagger-ui-express": "^5.0.1"
   },
   "devDependencies": {
-    "@types/express": "^5.0.0",
+    "@types/express": "^5.0.1",
     "@types/node": "^22.13.4",
     "@types/pg": "^8.11.11",
     "install": "^0.13.0",

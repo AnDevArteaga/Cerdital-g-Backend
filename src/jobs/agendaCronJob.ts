@@ -6,7 +6,7 @@ import admin from "../config/firebase"
 // Este es el cron job que se ejecutará todos los días a las 12 AM
 cron.schedule("0 0 * * *", async () => {
     try {
-
+        console.log("Ejecutando agendaCronJob...", new Date());
         // Obtener todas las agendas de la base de datos
         const agendas = await getAgendasByDate(new Date());  // Esta función buscará todas las agendas con fecha igual a hoy
         console.log('agendas', agendas)

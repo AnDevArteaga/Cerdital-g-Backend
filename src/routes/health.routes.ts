@@ -6,7 +6,7 @@ import { cacheMiddleware } from "../middleware/cache.middleware";
 const router = Router();
 
 router.post("/createHealth", authMiddleware, createHealth);
-router.get("/getHealthById/:user_id", authMiddleware, cacheMiddleware(healthCacheKeyBuilder, healthFormatter), getHealthById);
+router.get("/getHealthById/:user_id", authMiddleware, getHealthById);
 router.put("/editHealth/:health_id", authMiddleware, editHealth);
 router.delete("/deleteHealth/:health_id", authMiddleware, deleteHealth);
 

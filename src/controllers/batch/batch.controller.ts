@@ -12,7 +12,7 @@ export const getBatchById = async (req: Request, res: Response) => {
     const { user_id } = req.params;
     try {
         const data = await getBatchByIdUser(Number(user_id));
-
+        console.log('data', data)
          // Guardar en caché por 1 hora (3600 segundos)
         if (data.length > 0) {
             const redisResponse = await redis.set(`batch:${user_id}`, JSON.stringify(data), "EX", 3600);
