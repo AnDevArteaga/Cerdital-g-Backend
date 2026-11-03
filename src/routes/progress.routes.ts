@@ -1,10 +1,11 @@
 import { Router } from "express";
 import { getProgressById, updateProgress, createProgress } from "../controllers/progress/progress.controller";
-import { authMiddleware } from "../middleware/auth.middleware";
+import { authMiddleware, ownsUser } from "../middleware/auth.middleware";
 const router = Router();
 
-router.get("/getProgressById/:user_id", authMiddleware, getProgressById);
-router.put("/editProgress/:progress_id", authMiddleware, updateProgress);
-router.post("/createProgress", authMiddleware, createProgress);
+router.use(authMiddleware);
+router.get("/getProgressById/:user_id", ownsUser, getProgressById);
+router.put("/editProgress/:progress_id", ownsUser, updateProgress);
+router.post("/createProgress", ownsUser, createProgress);
 
 export default router;

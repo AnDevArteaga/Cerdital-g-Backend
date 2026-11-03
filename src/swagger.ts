@@ -10,11 +10,11 @@ const options = {
     },
     servers: [
       {
-        url: 'https://cerditalapi.cloud',
+        url: process.env.PUBLIC_URL || 'http://localhost:5000',
       },
     ],
   },
-  apis: ['./routes/**/*.ts'], // Aquí van los archivos donde documentas con Swagger
+  apis: ['./src/routes/**/*.ts'],
 };
 
 

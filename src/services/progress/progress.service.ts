@@ -15,6 +15,7 @@ import {
 } from "../../repositories/batch.repository";
 
 import { getPhaseById } from "../../repositories/list.repository";
+import { assertOwner } from "../../repositories/access.repository";
 
 export const getProgressByIdUser = async (user_id: number) => {
     if (!user_id) throw new Error("Sin usuario");
@@ -58,9 +59,9 @@ export const createProgressUser = async (
     let current_pig = 0;
     console.log("mortality", mortality);
     // Si la mortalidad es mayor a 0, validar contra current pigs
+    await assertOwner("lote", batch_id, user_id);
     const batch = await getOneBatchById(batch_id);
     if (batch.length < 1) throw new Error("No existe el lote");
-    console.log("batch", batch);
     current_pig = batch[0].numeros_cerdos_actuales;
 
     if (current_pig < mortality) {
@@ -151,7 +152,10 @@ export const updateProgressUser = async (
     weekly_average_weight: number,
     mortality: number,
     phase: number,
+    user_id: number,
 ) => {
+    await assertOwner("progreso", progress_id, user_id);
+    await assertOwner("lote", batch_id, user_id);
     if (!progress_id) throw new Error("No hay progreso seleccionado");
     if (!batch_id) throw new Error("No hay lote seleccionado");
     if (!date_weight) throw new Error("No hay fecha de peso");
@@ -255,7 +259,7 @@ function tranformProgress(progress: any[]): Progress {
         if (!mortality[id]) {
             mortality[id] = 0;
         }
-        mortality[id] += item.mortalidad;
+        mortality[id] += Number(item.mortalidad);
 
         console.log(mortality, "mortalidad");
         if (!lotesMap.has(item.id_lote)) {

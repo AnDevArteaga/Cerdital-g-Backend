@@ -1,5 +1,6 @@
 import { createFeeding, getFeedingById, updatedFeeding } from "../../repositories/feeding.repository";
 import { getOneBatchById } from "../../repositories/batch.repository";
+import { assertOwner } from "../../repositories/access.repository";
 
 export const getFeedingByIdUser = async (user_id: number) => {
     const feeding = await getFeedingById(user_id);
@@ -39,6 +40,7 @@ export const createFeedingUser = async (
     if (!amount) throw new Error("No hay cantidad en kilogramos");
     if (!cost) throw new Error("No hay costo unitario");
     if (!user_id) throw new Error("No hay usuario");
+    await assertOwner("lote", batch_id, user_id);
 
     const feedingCreated = await createFeeding(
         batch_id,
@@ -59,7 +61,10 @@ export const editFeedingUser = async (
     feeding_mark: string,
     amount: number,
     cost: number,
+    user_id: number,
  ) => {
+    await assertOwner("alimentacion", feeding_id, user_id);
+    await assertOwner("lote", batch_id, user_id);
     if (!feeding_id) throw new Error("No hay alimentación seleccionada");
     if (!batch_id) throw new Error("No hay lote seleccionado");
     if (!feeding_type) throw new Error("No hay tipo de alimentación");

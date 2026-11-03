@@ -7,11 +7,12 @@ import {
 import { CostResponse } from "../../interfaces/finance.interface";
 import { Meta } from "../../interfaces/meta.interface";
 import { clearCache } from "../../middleware/cache.middleware";
+import { fail } from "../../errors";
 
 export const getCostById = async (req: Request, res: Response) => {
-    const { user_id } = req.params;
+    const userId = Number(req.user.userId);
     try {
-        const data = await getCostByIdUser(Number(user_id));
+        const data = await getCostByIdUser(userId);
         const response: CostResponse = {
             cost: data,
             meta: {
@@ -20,16 +21,13 @@ export const getCostById = async (req: Request, res: Response) => {
             },
         };
         res.status(200).json(response);
-    } catch (error: any) {
-        const response: Meta = {
-            status: 404,
-            message: error.message,
-        };
-        res.status(404).json(response);
+    } catch (error: unknown) {
+        fail(res, error, 404);
     }
 };
 
 export const editCost = async (req: Request, res: Response) => {
+    const userId = Number(req.user.userId);
     const { cost_id } = req.params;
     const {
         batch_id,
@@ -39,7 +37,6 @@ export const editCost = async (req: Request, res: Response) => {
         handwork,
         transport,
         other,
-        user_id
     } = req.body;
     try {
         const data = await editCostUser(
@@ -51,18 +48,15 @@ export const editCost = async (req: Request, res: Response) => {
             handwork,
             transport,
             other,
+            userId,
         );
-        await clearCache(`home:${user_id}`);
+        await clearCache(`home:${userId}`);
         const response: Meta = {
             status: 201,
             message: data,
         };
         res.status(200).json(response);
-    } catch (error: any) {
-        const response: Meta = {
-            status: 400,
-            message: error.message,
-        };
-        res.status(400).json(response);
+    } catch (error: unknown) {
+        fail(res, error, 400);
     }
 };

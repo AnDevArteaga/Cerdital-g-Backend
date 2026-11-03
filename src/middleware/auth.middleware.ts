@@ -1,21 +1,31 @@
 import jwt, { JwtPayload } from "jsonwebtoken";
 import { Request, Response, NextFunction } from "express";
-import { Meta } from "../interfaces/meta.interface";
-
 
 export const authMiddleware = (req: Request, res: Response, next: NextFunction) => {
-    const token = req.headers.authorization?.split(" ")[1] || "";
-    if (!token) res.status(401).json({ data: "", status: 401, message: "No token" });
+    const header = req.headers.authorization || "";
+    const token = header.startsWith("Bearer ") ? header.slice(7) : "";
+    if (!token) {
+        res.status(401).json({ status: 401, message: "No token" });
+        return;
+    }
     try {
         const decoded = jwt.verify(token, process.env.JWT_SECRET!) as JwtPayload;
-        console.log(decoded);
-        // req.user = decoded.userId;
+        if (decoded.userId === undefined || decoded.userId === null) {
+            res.status(401).json({ status: 401, message: "Token inválido" });
+            return;
+        }
+        req.user = { userId: decoded.userId };
         next();
-    } catch (error: any) {
-        const response: Meta = {
-            status: 401,
-            message: error.message,
-        };
-        res.status(401).json(response);
+    } catch {
+        res.status(401).json({ status: 401, message: "Token inválido" });
     }
+};
+
+export const ownsUser = (req: Request, res: Response, next: NextFunction) => {
+    const claimed = req.params.user_id ?? req.body?.user_id;
+    if (claimed !== undefined && claimed !== "" && Number(claimed) !== Number(req.user.userId)) {
+        res.status(403).json({ status: 403, message: "No puedes ver datos de otro usuario." });
+        return;
+    }
+    next();
 };

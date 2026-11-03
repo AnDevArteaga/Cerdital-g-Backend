@@ -7,6 +7,7 @@ import {
     updateToken,
     deleteToken
 } from "../../repositories/user.repository";
+import { ForbiddenError } from "../../errors";
 
 
 //Registro de usuario
@@ -49,14 +50,14 @@ export const userLogin = async (
     const isPasswordCorrect = await bcrypt.compare(password, user.contrasena);
     if (!isPasswordCorrect) throw new Error("Contraseña incorrecta");
 
-    const updatedToken = await updateToken(user.id_usuario, token);
+    const updatedToken = await updateToken(user.id_usuario, token || "");
     if (updatedToken === 0) throw new Error("Error al actualizar el token");
     const userId = user.id_usuario;
     const AuthToken = jwt.sign(
-        {userId},
+        { userId },
         process.env.JWT_SECRET!,
+        { expiresIn: "7d" },
     );
-    console.log(AuthToken);
     const response = {
         id: user.id_usuario,
         email: user.correo,
@@ -80,14 +81,18 @@ export const checkUserByEmail = async (email: string) => {
 export const changePasswordByEmail = async (
     email: string,
     password: string,
+    actorId: number,
 ) => {
-    const hashedPassword = await bcrypt.hash(password, 10);
-    const userUpdated = await changePassword(email, hashedPassword);
-    if (password.length < 5) {
+    if (!password || password.length < 5) {
         throw new Error("La contraseña debe tener al menos 5 caracteres");
     }
-    if (userUpdated! === 0) throw new Error("Error al cambiar la contraseña");
-    console.log(userUpdated);
+    const user = await findUserByEmail(email);
+    if (!user) throw new Error("El correo electrónico no existe");
+    if (Number(user.id_usuario) !== Number(actorId)) throw new ForbiddenError();
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const userUpdated = await changePassword(email, hashedPassword);
+    if (!userUpdated) throw new Error("Error al cambiar la contraseña");
     return "Contraseña cambiada exitosamente";
 };
 

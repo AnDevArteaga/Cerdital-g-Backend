@@ -1,9 +1,9 @@
 import cron from "node-cron"
 import { getAgendasByDate, updateAgenda } from "../repositories/agenda.repository"
 import { findUserById } from "../repositories/user.repository"
-import admin from "../config/firebase"
+import admin, { firebaseReady } from "../config/firebase"
 
-// Este es el cron job que se ejecutará todos los días a las 12 AM
+export function startAgendaJob() {
 cron.schedule("0 0 * * *", async () => {
     try {
         console.log("Ejecutando agendaCronJob...", new Date());
@@ -15,8 +15,7 @@ cron.schedule("0 0 * * *", async () => {
             for (const agenda of agendas) {
                 const usuario = await findUserById(agenda.id_usuario);
                 console.log('usuario', usuario)
-                if (usuario && usuario.token) {
-                    // Enviar notificación a través de Firebase
+                if (usuario && usuario.token && firebaseReady) {
                     await admin.messaging().send({
                         notification: {
                             title: agenda.titulo, // Título de la agenda
@@ -36,3 +35,4 @@ cron.schedule("0 0 * * *", async () => {
         console.error("Error al enviar notificaciones de agendas:", error);
     }
 });
+}

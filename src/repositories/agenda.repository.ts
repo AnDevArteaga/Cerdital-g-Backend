@@ -13,7 +13,7 @@ export const getAgendasByDate = async (date: Date) => {
     const today = date.toISOString().split("T")[0];
     console.log("date", date);
     console.log("today", today);
-    const query = `SELECT * FROM agenda WHERE fecha_evento::date = $1`;
+    const query = `SELECT * FROM agenda WHERE fecha_evento::date = $1 AND estado IS DISTINCT FROM false`;
     const values = [today];
 
     try {

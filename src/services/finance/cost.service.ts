@@ -2,6 +2,7 @@ import {
     getCostById,
     updatedCost,
 } from "../../repositories/cost.repository";
+import { assertOwner } from "../../repositories/access.repository";
 
 export const getCostByIdUser = async (user_id: number) => {
     if (!user_id) throw new Error("Sin usuario")
@@ -19,7 +20,10 @@ export const editCostUser = async (
     handwork: number,
     transport: number,
     other: number,
+    user_id: number,
 ) => {
+    await assertOwner("costo", cost_id, user_id);
+    await assertOwner("lote", batch_id, user_id);
     const updatedCostRow = await updatedCost(
         cost_id,
         batch_id,

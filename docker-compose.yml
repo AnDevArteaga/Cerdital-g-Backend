@@ -1,0 +1,20 @@
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: cerdital
+      POSTGRES_PASSWORD: cerdital
+      POSTGRES_DB: cerdital
+    ports:
+      - "5432:5432"
+    volumes:
+      - cerdital-pg:/var/lib/postgresql/data
+      - ./db/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql
+
+  redis:
+    image: redis:7
+    ports:
+      - "6379:6379"
+
+volumes:
+  cerdital-pg:

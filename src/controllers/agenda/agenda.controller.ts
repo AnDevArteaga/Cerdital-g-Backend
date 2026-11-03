@@ -2,11 +2,12 @@ import { Request, Response } from "express";
 import { getAgendaByUserId, createAgendaUser } from "../../services/agenda/agenda.service";
 import { AgendaResponse } from "../../interfaces/agenda.interface";
 import { Meta } from "../../interfaces/meta.interface";
+import { fail } from "../../errors";
 
 export const getAgenda = async (req: Request, res: Response) => {
-    const { user_id } = req.params;
+    const userId = Number(req.user.userId);
     try {
-        const agenda = await getAgendaByUserId(Number(user_id));
+        const agenda = await getAgendaByUserId(userId);
         const response: AgendaResponse = {
             agenda: agenda,
             meta: {
@@ -15,30 +16,23 @@ export const getAgenda = async (req: Request, res: Response) => {
             },
         };
         res.status(200).json(response);
-    } catch (error: any) {
-        const response: Meta = {
-            status: 404,
-            message: error.message,
-        };
-        res.status(400).json(response);
+    } catch (error: unknown) {
+        fail(res, error, 404);
     }
 };
 
 export const createAgenda = async (req: Request, res: Response) => {
-    const { user_id, title, description, event_date } = req.body;
+    const userId = Number(req.user.userId);
+    const { title, description, event_date } = req.body;
     try {
-        const agenda = await createAgendaUser(user_id, title, description, event_date);
+        const agenda = await createAgendaUser(userId, title, description, event_date);
         console.log('agenda', agenda)
         const response: Meta = {
             status: 200,
             message: agenda,
         };
         res.status(200).json(response);
-    } catch (error: any) {
-        const response: Meta = {
-            status: 400,
-            message: error.message,
-        };
-        res.status(400).json(response);
+    } catch (error: unknown) {
+        fail(res, error, 400);
     }
 };

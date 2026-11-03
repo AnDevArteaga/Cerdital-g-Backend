@@ -1,18 +1,18 @@
 import { Router } from "express";
 import { getCostById, editCost } from "../controllers/finance/cost.controller";
 import { createSales, getSalesById, deleteSales } from "../controllers/finance/sales.controller";
-import { authMiddleware } from "../middleware/auth.middleware";
+import { authMiddleware, ownsUser } from "../middleware/auth.middleware";
 import { cacheMiddleware } from "../middleware/cache.middleware";
 import { salesCacheKeyBuilder, salesFormatter } from "../utils/salesCache";
 
 const router = Router();
 
-router.get("/getCostById/:user_id", authMiddleware, getCostById);
-router.put("/editCost/:cost_id", authMiddleware, editCost);
+router.use(authMiddleware);
+router.get("/getCostById/:user_id", ownsUser, getCostById);
+router.put("/editCost/:cost_id", ownsUser, editCost);
 
-router.post("/createSales", authMiddleware, createSales)
-router.get("/getSalesById/:user_id", authMiddleware, cacheMiddleware(salesCacheKeyBuilder, salesFormatter), getSalesById);
-// router.put("/editSales/:sales_id", authMiddleware, editSales);
-router.delete("/deleteSales/:sales_id", authMiddleware, deleteSales);
+router.post("/createSales", ownsUser, createSales)
+router.get("/getSalesById/:user_id", ownsUser, cacheMiddleware(salesCacheKeyBuilder, salesFormatter), getSalesById);
+router.delete("/deleteSales/:sales_id", deleteSales);
 
 export default router;

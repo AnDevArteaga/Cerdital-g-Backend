@@ -39,18 +39,13 @@ const calculateTotals = (costs: any, sales: any) => {
     }
 
     // Sum costs (excluding id_costo, id_lote, fecha_creacion, id_usuario)
-    const totalCosts = costs.reduce((total: any, cost: any) => {
-        return total + Object.keys(cost).reduce((sum, key) => {
-            if (!["id_costo", "id_lote", "fecha_creacion", "id_usuario"].includes(key)) {
-                return sum + cost[key];
-            }
-            return sum;
-        }, 0);
+    const costKeys = ["compra_cerdos", "alimentacion", "medicamentos", "mano_obra", "transporte", "otros"];
+    const totalCosts = costs.reduce((total: number, cost: any) => {
+        return total + costKeys.reduce((sum, key) => sum + Number(cost[key] || 0), 0);
     }, 0);
 
-    // Sum precio_kg from sales
     const totalSales = sales.reduce((total: number, sale: any) => {
-        return total + sale.precio_kg;
+        return total + Number(sale.cerdos_vendidos) * Number(sale.peso_promedio) * Number(sale.precio_kg);
     }, 0);
 
     return { totalCosts, totalSales };

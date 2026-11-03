@@ -7,11 +7,12 @@ import { authMiddleware } from "../middleware/auth.middleware";
 
 const router = Router();
 
-router.get("/getFeedingTypeList", authMiddleware, getFeedingTypeList);
-router.get("/getFeedingMarkList/:feeding_type_id", authMiddleware, getFeedingMarkList);
-router.get("/getDiseaseList", authMiddleware, getDiseaseList);
-router.get("/getRaceList/:race_type_id", authMiddleware, getRaceList);
-router.get("/getRaceTypeList", authMiddleware, getRaceTypeList);
-router.get("/getPhaseList", authMiddleware, getPhaseList);
+router.use(authMiddleware);
+router.get("/getFeedingTypeList", getFeedingTypeList);
+router.get("/getFeedingMarkList/:feeding_type_id", getFeedingMarkList);
+router.get("/getDiseaseList", getDiseaseList);
+router.get("/getRaceList/:race_type_id", getRaceList);
+router.get("/getRaceTypeList", getRaceTypeList);
+router.get("/getPhaseList", getPhaseList);
 
 export default router;

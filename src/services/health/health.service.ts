@@ -1,4 +1,5 @@
 import { createHealth, getHealthById, updatedHealth, deleteHealth } from "../../repositories/health.repository";
+import { assertOwner } from "../../repositories/access.repository";
 
 export const getHealthByIdUser = async (user_id: number) => {
     const health = await getHealthById(user_id);
@@ -16,6 +17,7 @@ export const createHealthUser = async (
     if (!disease) throw new Error("No hay enfermedad");
     if (!treatment) throw new Error("No hay tratamiento");
     if (!user_id) throw new Error("No hay usuario");
+    await assertOwner("lote", batch_id, user_id);
 
     const healthCreated = await createHealth(
         batch_id,
@@ -27,7 +29,8 @@ export const createHealthUser = async (
     return "tratamiento creado exitosamente";
 };
 
-export const deleteHealthUser = async (health_id: number) => {
+export const deleteHealthUser = async (health_id: number, user_id: number) => {
+    await assertOwner("salud", health_id, user_id);
     if (!health_id) throw new Error("No hay tratamiento seleccionado");
     const deletedHealth = await deleteHealth(health_id);
     if (deletedHealth === 0) throw new Error("Error al eliminar el tratamiento");
@@ -39,7 +42,10 @@ export const editHealthUser = async (
     batch_id: number,
     disease: string,
     treatment: string,
+    user_id: number,
 ) => {
+    await assertOwner("salud", health_id, user_id);
+    await assertOwner("lote", batch_id, user_id);
     if (!health_id) throw new Error("No hay salud seleccionada");
     if (!batch_id) throw new Error("No hay lote seleccionado");
     if (!disease) throw new Error("No hay enfermedad");

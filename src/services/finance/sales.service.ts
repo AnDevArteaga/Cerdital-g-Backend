@@ -8,6 +8,7 @@ import {
     getOneBatchById,
     updatedBatch,
 } from "../../repositories/batch.repository";
+import { assertOwner } from "../../repositories/access.repository";
 
 export const getSalesByIdUser = async (user_id: number) => {
     if (!user_id) throw new Error("Sin usuario");
@@ -29,9 +30,9 @@ export const createSalesUser = async (
     if (!price_kg) throw new Error("No hay precio en kilogramos");
     if (!user_id) throw new Error("No hay usuario");
 
+    await assertOwner("lote", batch_id, user_id);
     const batch = await getOneBatchById(batch_id);
     if (batch.length < 1) throw new Error("No existe el lote");
-    console.log("batch", batch);
     const current_pig = batch[0].numeros_cerdos_actuales;
     if (pig_sold > current_pig) {
         throw new Error("Cerdos insuficientes para vender esa cantidad");
@@ -87,7 +88,8 @@ export const createSalesUser = async (
     return "venta creada exitosamente y numero de cerdos actualizado";
 };
 
-export const deleteSalesUser = async (sales_id: number) => {
+export const deleteSalesUser = async (sales_id: number, user_id: number) => {
+    await assertOwner("venta", sales_id, user_id);
     if (!sales_id) throw new Error("No hay venta seleccionada");
     const deleted = await deleteSales(sales_id);
     if (deleted === 0) throw new Error("Error al eliminar la venta");

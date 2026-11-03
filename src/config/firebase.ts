@@ -1,9 +1,16 @@
+import fs from "fs";
+import path from "path";
 import * as admin from "firebase-admin";
 
-import serviceAccount from '../../firebase.json'; // Ajusta la ruta al JSON
+const file = path.resolve(process.cwd(), "firebase.json");
 
-admin.initializeApp({
-    credential: admin.credential.cert(serviceAccount as admin.ServiceAccount),
-  });
+if (fs.existsSync(file)) {
+    const serviceAccount = JSON.parse(fs.readFileSync(file, "utf8"));
+    admin.initializeApp({
+        credential: admin.credential.cert(serviceAccount),
+    });
+}
 
-  export default admin;
+export const firebaseReady = admin.apps.length > 0;
+
+export default admin;

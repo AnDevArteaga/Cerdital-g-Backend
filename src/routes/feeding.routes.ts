@@ -1,13 +1,14 @@
 import { Router } from "express";
 import { createFeeding, editFeeding, getFeedingById } from "../controllers/feeding/feeding.controller";
-import { authMiddleware } from "../middleware/auth.middleware";
+import { authMiddleware, ownsUser } from "../middleware/auth.middleware";
 import { cacheMiddleware } from "../middleware/cache.middleware";
 import { feedingCacheKeyBuilder, feedingFormatter } from "../utils/feedingCache";
 const router = Router();
 
-router.post("/createFeeding", authMiddleware, createFeeding);
-router.get("/getFeedingById/:user_id", authMiddleware, cacheMiddleware(feedingCacheKeyBuilder, feedingFormatter), getFeedingById);
-router.put("/editFeeding/:feeding_id", authMiddleware, editFeeding);
+router.use(authMiddleware);
+router.post("/createFeeding", ownsUser, createFeeding);
+router.get("/getFeedingById/:user_id", ownsUser, cacheMiddleware(feedingCacheKeyBuilder, feedingFormatter), getFeedingById);
+router.put("/editFeeding/:feeding_id", ownsUser, editFeeding);
 
 
 export default router;

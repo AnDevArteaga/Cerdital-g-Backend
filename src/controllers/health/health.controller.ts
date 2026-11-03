@@ -5,15 +5,12 @@ import { HealthResponse } from "../../interfaces/health.interface";
 import { Meta } from "../../interfaces/meta.interface";
 import { clearCache } from "../../middleware/cache.middleware";
 import redis from "../../config/redis";
+import { fail } from "../../errors";
 
 export const getHealthById = async (req: Request, res: Response) => {
-    const { user_id } = req.params;
-    console.log(req);
-    // const userId = req.user?.userId;
-    // console.log(userId);
-    // if (!userId) throw new Error("Sin usuario");
+    const userId = Number(req.user.userId);
     try {
-        const data = await getHealthByIdUser(Number(user_id));
+        const data = await getHealthByIdUser(userId);
         
          // Guardar en caché por 1 hora (3600 segundos)
         // const redisResponse = await redis.set(`health:${user_id}`, JSON.stringify(data), "EX", 3600);
@@ -26,19 +23,16 @@ export const getHealthById = async (req: Request, res: Response) => {
             },
         };
         res.status(200).json(response);
-    } catch (error: any) {
-        const response: Meta = {
-            status: 404,
-            message: error.message,
-        };
-        res.status(404).json(response);
+    } catch (error: unknown) {
+        fail(res, error, 404);
     }
 };
 
 export const createHealth = async (req: Request, res: Response) => {
-    const { batch_id, disease, treatment, user_id } = req.body;
+    const userId = Number(req.user.userId);
+    const { batch_id, disease, treatment } = req.body;
     try {
-        const data = await createHealthUser(batch_id, disease, treatment, user_id);
+        const data = await createHealthUser(batch_id, disease, treatment, userId);
 
         // await clearCache(`health:${user_id}`);
         const response: Meta = {
@@ -47,33 +41,23 @@ export const createHealth = async (req: Request, res: Response) => {
             };
 
         res.status(200).json(response);
-    } catch (error: any) {
-        const response: Meta = {
-            status: 400,
-            message: error.message,
-            };
-        res.status(400).json(response);
+    } catch (error: unknown) {
+        fail(res, error, 400);
     }
 };
 
 export const deleteHealth = async (req: Request, res: Response) => {
     const { health_id } = req.params;
     try {
-        // await clearCache(`health:${user_id}`);
-
-        const data = await deleteHealthUser(Number(health_id));
+        const data = await deleteHealthUser(Number(health_id), Number(req.user.userId));
         const response: Meta = {
             status: 200,
             message: data,
             };
 
         res.status(200).json(response);
-    } catch (error: any) {
-        const response: Meta = {
-            status: 400,
-            message: error.message,
-            };
-        res.status(400).json(response);
+    } catch (error: unknown) {
+        fail(res, error, 400);
     }
 };
 
@@ -81,18 +65,14 @@ export const editHealth = async (req: Request, res: Response) => {
     const { health_id } = req.params;
     const { batch_id, disease, treatment } = req.body;
     try {
-        const data = await editHealthUser(Number(health_id), batch_id, disease, treatment);
+        const data = await editHealthUser(Number(health_id), batch_id, disease, treatment, Number(req.user.userId));
         const response: Meta = {
             status: 200,
             message: data,
             };
 
         res.status(200).json(response);
-    } catch (error: any) {
-        const response: Meta = {
-            status: 400,
-            message: error.message,
-            };
-        res.status(400).json(response);
+    } catch (error: unknown) {
+        fail(res, error, 400);
     }
 };

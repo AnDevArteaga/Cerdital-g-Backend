@@ -5,7 +5,7 @@ const router = Router();
 
 /**
  * @swagger
- * /login:
+ * /api/auth/login:
  *   post:
  *     summary: Inicia sesión de usuario
  *     description: Recibe las credenciales del usuario para iniciar sesión.
@@ -32,7 +32,7 @@ const router = Router();
 router.post("/login", login);
 /**
  * @swagger
- * /register:
+ * /api/auth/register:
  *   post:
  *     summary: Registra un nuevo usuario
  *     description: Crea una nueva cuenta de usuario con los datos proporcionados.
@@ -61,7 +61,7 @@ router.post("/login", login);
 router.post("/register", register);
 /**
  * @swagger
- * /checkUser:
+ * /api/auth/checkUser:
  *   post:
  *     summary: Verifica si un usuario ya está registrado
  *     description: Comprueba si existe un usuario con el correo electrónico proporcionado.
@@ -83,7 +83,7 @@ router.post("/register", register);
 router.post("/checkUser", checkUser);
 /**
  * @swagger
- * /changePassword:
+ * /api/auth/changePassword:
  *   post:
  *     summary: Cambia la contraseña de un usuario
  *     description: Permite cambiar la contraseña de un usuario mediante su correo.
@@ -104,7 +104,7 @@ router.post("/checkUser", checkUser);
  *       400:
  *         description: Error en la operación
  */
-router.post("/changePassword", changePassword);
+router.post("/changePassword", authMiddleware, changePassword);
 router.post("/logout/:id", authMiddleware, logout);
 
 export default router;

@@ -9,6 +9,7 @@ import {
     getRaceById,
     getRaceByName,
 } from "../../repositories/list.repository";
+import { assertOwner } from "../../repositories/access.repository";
 
 export const getBatchByIdUser = async (user_id: number) => {
     const batch = await getBatchById(user_id);
@@ -88,7 +89,7 @@ export const createBatchUser = async (
     const costCreated = await createCost(batch_id, user_id);
     if (costCreated === 0) throw new Error("Error al crear el costo asociado");
 
-    return "Lote, costo y progreso creados exitosamente";
+    return "Lote y costo creados exitosamente";
 };
 
 export const editBatchUser = async (
@@ -98,7 +99,9 @@ export const editBatchUser = async (
     number_of_pigs?: number,
     pig_registered?: number,
     current_pig?: number,
+    user_id?: number,
 ) => {
+    await assertOwner("lote", batch_id, Number(user_id));
     // Verificar si al menos un campo tiene un valor para actualizar
     console.log(
         race,
@@ -108,8 +111,8 @@ export const editBatchUser = async (
         current_pig,
     );
     if (
-        race === undefined && average_weight === undefined &&
-            number_of_pigs === undefined || number_of_pigs === 0
+        (race === undefined && average_weight === undefined && number_of_pigs === undefined) ||
+        number_of_pigs === 0
     ) {
         throw new Error("No hay datos para actualizar");
     }
