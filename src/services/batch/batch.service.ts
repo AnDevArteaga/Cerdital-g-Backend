@@ -3,7 +3,8 @@ import {
     getBatchById,
     updatedBatch,
 } from "../../repositories/batch.repository";
-import { createCost } from "../../repositories/cost.repository";
+import { createCost, getCostByBatch } from "../../repositories/cost.repository";
+import { findClient } from "../../repositories/client.repository";
 import {
     getPhaseById,
     getRaceById,
@@ -66,12 +67,18 @@ export const createBatchUser = async (
     race: string,
     average_weight: number,
     phase: number,
+    clientId: string | null = null,
+    costClientId: string | null = null,
 ) => {
-    if (pigs < 1) throw new Error("Debe registrar al menos 1 cerdo");
+    if (!Number.isFinite(pigs) || pigs < 1) throw new Error("Debe registrar al menos 1 cerdo");
     if (!average_weight) throw new Error("No hay peso promedio");
     if (!race) throw new Error("No hay raza");
     if (!batch_name) throw new Error("No hay nombre de lote");
     if (!phase) throw new Error("No hay fase");
+    if (clientId) {
+        const existing = await savedBatch(clientId, user_id);
+        if (existing) return existing;
+    }
     const pig_registered = pigs;
     const current_pig = pigs;
     const batchCreated = await createBatch(
@@ -82,15 +89,34 @@ export const createBatchUser = async (
         race,
         average_weight,
         phase,
+        clientId,
     );
     console.log("batch", batchCreated);
+    if (!batchCreated) {
+        if (!clientId) throw new Error("Error al crear el lote");
+        const existing = await savedBatch(clientId, user_id);
+        if (!existing) throw new Error("Error al crear el lote");
+        return existing;
+    }
     const batch_id = batchCreated.id_lote;
-    if (batchCreated === 0) throw new Error("Error al crear el lote");
-    const costCreated = await createCost(batch_id, user_id);
-    if (costCreated === 0) throw new Error("Error al crear el costo asociado");
+    const costCreated = await createCost(batch_id, user_id, costClientId);
+    if (!costCreated) throw new Error("Error al crear el costo asociado");
 
-    return "Lote y costo creados exitosamente";
+    return {
+        message: "Lote y costo creados exitosamente",
+        record: { ...batchCreated, costo: costCreated },
+    };
 };
+
+async function savedBatch(clientId: string, userId: number) {
+    const existing = await findClient("lotes", clientId, userId);
+    if (!existing) return null;
+    const cost = await getCostByBatch(existing.id_lote);
+    return {
+        message: "Lote y costo creados exitosamente",
+        record: { ...existing, costo: cost },
+    };
+}
 
 export const editBatchUser = async (
     batch_id: number,

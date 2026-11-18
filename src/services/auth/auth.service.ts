@@ -4,6 +4,7 @@ import {
     changePassword,
     createUser,
     findUserByEmail,
+    setRole,
     updateToken,
     deleteToken
 } from "../../repositories/user.repository";
@@ -53,8 +54,9 @@ export const userLogin = async (
     const updatedToken = await updateToken(user.id_usuario, token || "");
     if (updatedToken === 0) throw new Error("Error al actualizar el token");
     const userId = user.id_usuario;
+    const rol = user.rol === "superadmin" ? "superadmin" : "usuario";
     const AuthToken = jwt.sign(
-        { userId },
+        { userId, rol },
         process.env.JWT_SECRET!,
         { expiresIn: "7d" },
     );
@@ -63,9 +65,26 @@ export const userLogin = async (
         email: user.correo,
         fullName: user.nombre,
         phone: user.telefono,
+        rol,
         token: AuthToken,
     };
     return response;
+};
+
+export const ensureSuperAdmin = async () => {
+    const email = process.env.SUPERADMIN_EMAIL?.trim();
+    const password = process.env.SUPERADMIN_PASSWORD || "";
+    const fullName = process.env.SUPERADMIN_NAME?.trim() || "Cerdital";
+    if (!email || password.length < 5) return;
+
+    const existing = await findUserByEmail(email);
+    if (existing) {
+        if (existing.rol !== "superadmin") await setRole(existing.id_usuario, "superadmin");
+        return;
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+    await createUser(fullName, "3000000000", email, hashedPassword, "superadmin");
 };
 
 //Verificar usuario si existe

@@ -3,7 +3,7 @@ import pool from "../config/db";
 //Obtener un lote en especifico
 export const getOneBatchById = async (batch_id: number) =>  {
     const { rows } = await pool.query(
-        "SELECT * FROM lotes WHERE id_lote = $1",
+        "SELECT * FROM lotes WHERE id_lote = $1 AND deleted_at IS NULL",
         [batch_id],
     );
     return rows
@@ -12,7 +12,7 @@ export const getOneBatchById = async (batch_id: number) =>  {
 //Obtener lotes por id de usuario
 export const getBatchById = async (user_id: number) => {
     const { rows } = await pool.query(
-        "SELECT * FROM lotes WHERE id_usuario = $1",
+        "SELECT * FROM lotes WHERE id_usuario = $1 AND deleted_at IS NULL",
         [user_id],
     );
     return rows;
@@ -27,10 +27,14 @@ export const createBatch = async (
     race: string,
     average_weight: number,
     phase: number,
+    clientId: string | null = null,
 ) => {
     const date = new Date();
     const { rows } = await pool.query(
-        "INSERT INTO lotes (id_usuario, nombre_lote, numero_cerdos_registrado, numeros_cerdos_actuales, raza, peso_promedio, fecha_creacion, fase) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) returning id_lote",
+        `INSERT INTO lotes (id_usuario, nombre_lote, numero_cerdos_registrado, numeros_cerdos_actuales, raza, peso_promedio, fecha_creacion, fase, client_id)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, COALESCE($9::uuid, gen_random_uuid()))
+         ON CONFLICT (client_id) DO NOTHING
+         RETURNING *`,
         [
             user_id,
             batch_name,
@@ -39,7 +43,8 @@ export const createBatch = async (
             race,
             average_weight,
             date,
-            phase
+            phase,
+            clientId,
         ],
     );
     return rows[0];
@@ -48,7 +53,7 @@ export const createBatch = async (
 //elminar lote por id de lote
 export const deleteBatch = async (batch_id: number) => {
     const { rowCount } = await pool.query(
-        "DELETE FROM lotes WHERE id_lote = $1",
+        "UPDATE lotes SET deleted_at = now(), updated_at = now() WHERE id_lote = $1 AND deleted_at IS NULL",
         [batch_id],
     );
     return rowCount;
@@ -109,6 +114,7 @@ export const updatedBatch = async (
     if (fields.length === 0) {
         return 0;
     }
+    fields.push("updated_at = now()");
   
     values.push(batch_id);
     const query = `UPDATE lotes SET ${fields.join(", ")} WHERE id_lote = $${values.length} RETURNING numeros_cerdos_actuales`;

@@ -4,6 +4,7 @@ declare module "express-serve-static-core" {
     interface Request {
         user: {
             userId: string | number;
+            rol: "usuario" | "superadmin";
         };
     }
 }

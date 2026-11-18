@@ -24,9 +24,9 @@ cp .env.example .env
 npm run dev
 ```
 
-La API escucha en `http://localhost:5000`. Swagger queda en `/api-docs`. Postgres y Redis salen del compose. El esquema y los catálogos de ejemplo están en `db/schema.sql` y se cargan la primera vez que se crea el volumen.
+La API escucha en `http://localhost:5000`. El contrato, con cuerpos, respuestas y ejemplos, está en `/api-docs`. El JSON queda en `/api-docs.json`. Postgres y Redis salen del compose. El esquema y los catálogos de ejemplo están en `db/schema.sql` y se cargan la primera vez que se crea el volumen.
 
-Ese esquema es para una base nueva. No lo corras sobre la base que ya usa la app en producción.
+Ese esquema es para una base nueva. No lo corras sobre la base que ya usa la app en producción. En esa base, corre una vez `db/migrate-sync.sql`: agrega el id del celular, la fecha de cambio y el borrado lógico, sin borrar filas.
 
 | Variable | Uso |
 |---|---|
@@ -75,6 +75,46 @@ La fase `4` del esquema local es ceba. Las razas de ejemplo son Landrace, Yorksh
 | `GET /api/agenda/:user_id`, `POST /api/agenda` | Agenda |
 | `GET /api/list/...` | Catálogos |
 | `POST /api/push/test` | Push al dispositivo del usuario, si Firebase está configurado |
+| `POST /api/sync/push`, `GET /api/sync/pull?since=` | Sincronización de la app |
+| `GET /api/admin/overview`, `GET /api/admin/users/:id`, `POST /api/admin/users` | Panel del super admin |
+
+El rol va en el JWT. Quien se registra queda como `usuario` y usa la web igual que la app: su granja, sus lotes y su estadística. El super admin sale de `SUPERADMIN_EMAIL` y `SUPERADMIN_PASSWORD` al arrancar la API. Ese panel ve todas las granjas, la utilidad y el detalle de cada una. Un usuario normal recibe 403 si entra ahí.
+
+En una base que ya existe, corre una vez `db/migrate-admin.sql` después de `db/migrate-sync.sql`.
+
+Crear un lote, una alimentación, un tratamiento, un pesaje, una venta o un evento devuelve el registro en `record`, con su `client_id`. Si el mismo `client_id` llega otra vez, no se duplica.
+
+## Sincronización
+
+La web y la app con señal siguen usando las rutas de arriba: lotes, alimentación, sanidad, finanzas, progreso, inicio, agenda y catálogos. La app sin señal guarda en el teléfono y, al volver la red, manda la cola en tandas de hasta 20.
+
+`POST /api/sync/push`
+
+```json
+{
+  "changes": [
+    {
+      "client_id": "11111111-1111-4111-8111-111111111111",
+      "type": "lote",
+      "action": "crear",
+      "data": {
+        "batch_name": "Lote norte",
+        "pigs": 10,
+        "race": "Landrace",
+        "average_weight": 20,
+        "phase": 4,
+        "cost_client_id": "22222222-2222-4222-8222-222222222222"
+      }
+    }
+  ]
+}
+```
+
+`type` es `lote`, `alimentacion`, `sanidad`, `pesaje`, `venta`, `costo` o `agenda`. `action` es `crear`, `editar` o `borrar`. El lote de una alimentación, sanidad, pesaje o venta va en `batch_id` o en `batch_client_id`. Los datos usan los mismos nombres que el POST de cada ruta. El costo nace con el lote; después se edita con el `client_id` del costo.
+
+Cada resultado es `guardado`, con el registro, o `conflicto`, con el mensaje. Una venta repetida no vuelve a restar cerdos. Si la venta o el pesaje dejan el lote en negativo, ese cambio vuelve en conflicto. Borrar una venta o un pesaje recalcula los cerdos.
+
+`GET /api/sync/pull?since=` devuelve las filas de ese usuario que cambiaron después de la marca, borradas incluidas: `lotes`, `alimentacion`, `sanidad`, `pesajes`, `ventas`, `costos` y `agenda`. La respuesta trae `cursor` para la siguiente vez. Sin `since`, baja todo lo de esa cuenta.
 
 A medianoche, la agenda del día manda el push y marca el evento como enviado. Redis guarda por una hora las lecturas de lotes, alimentación, ventas e inicio.
 

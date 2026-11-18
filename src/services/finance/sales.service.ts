@@ -1,6 +1,5 @@
 import {
     createSales,
-    deleteSales,
     getSalesById,
 } from "../../repositories/sales.repository";
 
@@ -9,6 +8,8 @@ import {
     updatedBatch,
 } from "../../repositories/batch.repository";
 import { assertOwner } from "../../repositories/access.repository";
+import { findClient } from "../../repositories/client.repository";
+import { recomputeHerd, softDeleteById, withTransaction } from "../../repositories/herd.repository";
 
 export const getSalesByIdUser = async (user_id: number) => {
     if (!user_id) throw new Error("Sin usuario");
@@ -23,12 +24,17 @@ export const createSalesUser = async (
     average_weight: number,
     price_kg: number,
     user_id: number,
+    clientId: string | null = null,
 ) => {
     if (!batch_id) throw new Error("No hay lote seleccionado");
     if (!pig_sold) throw new Error("No hay cerdos vendidos");
     if (!average_weight) throw new Error("No hay peso promedio");
     if (!price_kg) throw new Error("No hay precio en kilogramos");
     if (!user_id) throw new Error("No hay usuario");
+    if (clientId) {
+        const existing = await findClient("ventas", clientId, user_id);
+        if (existing) return { message: "venta creada exitosamente y numero de cerdos actualizado", record: existing };
+    }
 
     await assertOwner("lote", batch_id, user_id);
     const batch = await getOneBatchById(batch_id);
@@ -44,8 +50,14 @@ export const createSalesUser = async (
         average_weight,
         price_kg,
         user_id,
+        clientId,
     );
-    if (salesCreated === 0) throw new Error("Error al crear la venta");
+    if (!salesCreated) {
+        if (!clientId) throw new Error("Error al crear la venta");
+        const existing = await findClient("ventas", clientId, user_id);
+        if (!existing) throw new Error("Error al crear la venta");
+        return { message: "venta creada exitosamente y numero de cerdos actualizado", record: existing };
+    }
 
     const newCurrent = current_pig - pig_sold;
     const batchUpdated = await updatedBatch(
@@ -85,14 +97,17 @@ export const createSalesUser = async (
         }
     }
 
-    return "venta creada exitosamente y numero de cerdos actualizado";
+    return { message: "venta creada exitosamente y numero de cerdos actualizado", record: salesCreated };
 };
 
 export const deleteSalesUser = async (sales_id: number, user_id: number) => {
     await assertOwner("venta", sales_id, user_id);
     if (!sales_id) throw new Error("No hay venta seleccionada");
-    const deleted = await deleteSales(sales_id);
-    if (deleted === 0) throw new Error("Error al eliminar la venta");
+    await withTransaction(async (client) => {
+        const deleted = await softDeleteById(client, "venta", sales_id);
+        if (!deleted) throw new Error("Error al eliminar la venta");
+        await recomputeHerd(client, deleted.id_lote, undefined, "Cerdos insuficientes para vender esa cantidad");
+    });
     return "venta eliminada exitosamente";
 };
 

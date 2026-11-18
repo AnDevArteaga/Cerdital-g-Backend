@@ -32,12 +32,21 @@ export const createUser = async (
     phone: string,
     email: string,
     password: string,
+    rol: "usuario" | "superadmin" = "usuario",
 ) => {
     const { rows } = await pool.query(
-        "INSERT INTO usuarios (nombre, telefono, correo, contrasena) VALUES ($1, $2, $3, $4) RETURNING id_usuario, correo",
-        [fullName, phone, email, password],
+        "INSERT INTO usuarios (nombre, telefono, correo, contrasena, rol) VALUES ($1, $2, $3, $4, $5) RETURNING id_usuario, correo, rol",
+        [fullName, phone, email, password, rol],
     );
     return rows[0];
+};
+
+export const setRole = async (id: number, rol: "usuario" | "superadmin") => {
+    const { rowCount } = await pool.query(
+        "UPDATE usuarios SET rol = $1 WHERE id_usuario = $2",
+        [rol, id],
+    );
+    return rowCount;
 };
 
 //Actualizar token de firebase en la base de datos

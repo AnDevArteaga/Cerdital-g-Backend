@@ -15,10 +15,22 @@ import listRoutes from "./routes/list.routes";
 import homeRoutes from "./routes/home.routes";
 import pushRoutes from "./routes/push.routes";
 import agendaRoutes from "./routes/agenda.routes";
+import syncRoutes from "./routes/sync.routes";
+import adminRoutes from "./routes/admin.routes";
 
 export const app = express();
 
-app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+app.get("/api-docs.json", (_req, res) => {
+    res.json(swaggerSpec);
+});
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
+    customSiteTitle: "Cerdital G",
+    swaggerOptions: {
+        persistAuthorization: true,
+        docExpansion: "list",
+        defaultModelsExpandDepth: 0,
+    },
+}));
 app.use(express.json());
 app.use(morgan("dev"));
 app.use(helmet());
@@ -41,3 +53,5 @@ app.use("/api/list", listRoutes);
 app.use("/api/home", homeRoutes);
 app.use("/api/agenda", agendaRoutes);
 app.use("/api/push", pushRoutes);
+app.use("/api/sync", syncRoutes);
+app.use("/api/admin", adminRoutes);

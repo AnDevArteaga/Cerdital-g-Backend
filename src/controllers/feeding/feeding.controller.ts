@@ -8,6 +8,7 @@ import { Meta } from "../../interfaces/meta.interface";
 import { clearCache } from "../../middleware/cache.middleware";
 import redis from "../../config/redis";
 import { fail } from "../../errors";
+import { optionalClientId } from "../../repositories/client.repository";
 
 export const getFeedingById = async (req: Request, res: Response) => {
     const userId = Number(req.user.userId);
@@ -32,17 +33,24 @@ export const getFeedingById = async (req: Request, res: Response) => {
 
 export const createFeeding = async (req: Request, res: Response) => {
     const userId = Number(req.user.userId);
-    const { batch_id, feeding_type, feeding_mark, amount, cost } = req.body;
+    const { batch_id, feeding_type, feeding_mark, amount, cost, client_id } = req.body;
     try {
-        const data = await createFeedingUser(batch_id, feeding_type, feeding_mark, amount, cost, userId);
+        const data = await createFeedingUser(
+            batch_id,
+            feeding_type,
+            feeding_mark,
+            amount,
+            cost,
+            userId,
+            optionalClientId(client_id),
+        );
 
         await clearCache(`feeding:${userId}`);
-        const response: Meta = {
+        res.status(200).json({
             status: 200,
-            message: data,
-            };
-
-        res.status(200).json(response);
+            message: data.message,
+            record: data.record,
+        });
     } catch (error: unknown) {
         fail(res, error, 400);
     }

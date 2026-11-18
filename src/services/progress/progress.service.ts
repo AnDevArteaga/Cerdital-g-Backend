@@ -16,6 +16,7 @@ import {
 
 import { getPhaseById } from "../../repositories/list.repository";
 import { assertOwner } from "../../repositories/access.repository";
+import { findClient } from "../../repositories/client.repository";
 
 export const getProgressByIdUser = async (user_id: number) => {
     if (!user_id) throw new Error("Sin usuario");
@@ -46,15 +47,20 @@ export const createProgressUser = async (
     mortality: number,
     phase: number,
     user_id: number,
+    clientId: string | null = null,
 ) => {
     if (!batch_id) throw new Error("No hay lote seleccionado");
     if (!user_id) throw new Error("No hay usuario");
     if (!date_weight) throw new Error("No hay fecha de peso");
     if (!weekly_average_weight) throw new Error("No hay peso promedio");
-    if (mortality === undefined || mortality === null) {
+    if (mortality === undefined || mortality === null || Number.isNaN(Number(mortality))) {
         throw new Error("No hay mortalidad");
     }
     if (!phase) throw new Error("No hay fase");
+    if (clientId) {
+        const existing = await findClient("progreso", clientId, user_id);
+        if (existing) return { message: "Progreso creado exitosamente", record: existing };
+    }
 
     let current_pig = 0;
     console.log("mortality", mortality);
@@ -78,8 +84,14 @@ export const createProgressUser = async (
         mortality,
         user_id,
         phase,
+        clientId,
     );
-    if (progressCreated === 0) throw new Error("Error al crear el progreso");
+    if (!progressCreated) {
+        if (!clientId) throw new Error("Error al crear el progreso");
+        const existing = await findClient("progreso", clientId, user_id);
+        if (!existing) throw new Error("Error al crear el progreso");
+        return { message: "Progreso creado exitosamente", record: existing };
+    }
     const updatedPhaseBatch = await updatedBatch(
         batch_id,
         undefined,
@@ -142,7 +154,7 @@ export const createProgressUser = async (
         }
     }
 
-    return "Progreso creado exitosamente";
+    return { message: "Progreso creado exitosamente", record: progressCreated };
 };
 
 export const updateProgressUser = async (

@@ -14,7 +14,8 @@ export const authMiddleware = (req: Request, res: Response, next: NextFunction) 
             res.status(401).json({ status: 401, message: "Token inválido" });
             return;
         }
-        req.user = { userId: decoded.userId };
+        const rol = decoded.rol === "superadmin" ? "superadmin" : "usuario";
+        req.user = { userId: decoded.userId, rol };
         next();
     } catch {
         res.status(401).json({ status: 401, message: "Token inválido" });
@@ -25,6 +26,14 @@ export const ownsUser = (req: Request, res: Response, next: NextFunction) => {
     const claimed = req.params.user_id ?? req.body?.user_id;
     if (claimed !== undefined && claimed !== "" && Number(claimed) !== Number(req.user.userId)) {
         res.status(403).json({ status: 403, message: "No puedes ver datos de otro usuario." });
+        return;
+    }
+    next();
+};
+
+export const requireSuper = (req: Request, res: Response, next: NextFunction) => {
+    if (req.user?.rol !== "superadmin") {
+        res.status(403).json({ status: 403, message: "Solo el super admin puede ver este panel." });
         return;
     }
     next();

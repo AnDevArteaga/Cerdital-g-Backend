@@ -1,5 +1,6 @@
 import { createHealth, getHealthById, updatedHealth, deleteHealth } from "../../repositories/health.repository";
 import { assertOwner } from "../../repositories/access.repository";
+import { findClient } from "../../repositories/client.repository";
 
 export const getHealthByIdUser = async (user_id: number) => {
     const health = await getHealthById(user_id);
@@ -11,12 +12,17 @@ export const createHealthUser = async (
     batch_id: number,
     disease: string,
     treatment: string,
-    user_id: number
+    user_id: number,
+    clientId: string | null = null,
 ) => {
     if (!batch_id) throw new Error("No hay lote seleccionado");
     if (!disease) throw new Error("No hay enfermedad");
     if (!treatment) throw new Error("No hay tratamiento");
     if (!user_id) throw new Error("No hay usuario");
+    if (clientId) {
+        const existing = await findClient("salud_tratamiento", clientId, user_id);
+        if (existing) return { message: "tratamiento creado exitosamente", record: existing };
+    }
     await assertOwner("lote", batch_id, user_id);
 
     const healthCreated = await createHealth(
@@ -24,9 +30,15 @@ export const createHealthUser = async (
         disease,
         treatment,
         user_id,
+        clientId,
     );
-    if (healthCreated === 0) throw new Error("Error al crear el tratamiento");
-    return "tratamiento creado exitosamente";
+    if (!healthCreated) {
+        if (!clientId) throw new Error("Error al crear el tratamiento");
+        const existing = await findClient("salud_tratamiento", clientId, user_id);
+        if (!existing) throw new Error("Error al crear el tratamiento");
+        return { message: "tratamiento creado exitosamente", record: existing };
+    }
+    return { message: "tratamiento creado exitosamente", record: healthCreated };
 };
 
 export const deleteHealthUser = async (health_id: number, user_id: number) => {

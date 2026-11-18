@@ -1,6 +1,7 @@
 import { createFeeding, getFeedingById, updatedFeeding } from "../../repositories/feeding.repository";
 import { getOneBatchById } from "../../repositories/batch.repository";
 import { assertOwner } from "../../repositories/access.repository";
+import { findClient } from "../../repositories/client.repository";
 
 export const getFeedingByIdUser = async (user_id: number) => {
     const feeding = await getFeedingById(user_id);
@@ -31,7 +32,8 @@ export const createFeedingUser = async (
     feeding_mark: string,
     amount: number,
     cost: number,
-    user_id: number
+    user_id: number,
+    clientId: string | null = null,
 
 ) => {
     if (!batch_id) throw new Error("No hay lote seleccionado");
@@ -40,6 +42,10 @@ export const createFeedingUser = async (
     if (!amount) throw new Error("No hay cantidad en kilogramos");
     if (!cost) throw new Error("No hay costo unitario");
     if (!user_id) throw new Error("No hay usuario");
+    if (clientId) {
+        const existing = await findClient("alimentacion", clientId, user_id);
+        if (existing) return { message: "alimentación creada exitosamente", record: existing };
+    }
     await assertOwner("lote", batch_id, user_id);
 
     const feedingCreated = await createFeeding(
@@ -49,9 +55,15 @@ export const createFeedingUser = async (
         amount,
         cost,
         user_id,
+        clientId,
     );
-    if (feedingCreated === 0) throw new Error("Error al crear la alimentación");
-    return "alimentación creada exitosamente";
+    if (!feedingCreated) {
+        if (!clientId) throw new Error("Error al crear la alimentación");
+        const existing = await findClient("alimentacion", clientId, user_id);
+        if (!existing) throw new Error("Error al crear la alimentación");
+        return { message: "alimentación creada exitosamente", record: existing };
+    }
+    return { message: "alimentación creada exitosamente", record: feedingCreated };
 };
 
 export const editFeedingUser = async (

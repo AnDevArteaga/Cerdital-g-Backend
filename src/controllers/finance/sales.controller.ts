@@ -10,6 +10,7 @@ import { Meta } from "../../interfaces/meta.interface";
 import { clearCache } from "../../middleware/cache.middleware";
 import redis from "../../config/redis";
 import { fail } from "../../errors";
+import { optionalClientId } from "../../repositories/client.repository";
 
 export const getSalesById = async (req: Request, res: Response) => {
     const userId = Number(req.user.userId);
@@ -35,17 +36,24 @@ export const getSalesById = async (req: Request, res: Response) => {
 
 export const createSales = async (req: Request, res: Response) => {
      const userId = Number(req.user.userId);
-     const { batch_id, pig_sold, average_weight, price_kg } = req.body;
+     const { batch_id, pig_sold, average_weight, price_kg, client_id } = req.body;
      try { 
-        const data = await createSalesUser(batch_id, pig_sold, average_weight, price_kg, userId)
+        const data = await createSalesUser(
+            batch_id,
+            pig_sold,
+            average_weight,
+            price_kg,
+            userId,
+            optionalClientId(client_id),
+        )
         await clearCache(`sales:${userId}`);
         await clearCache(`batch:${userId}`);
         await clearCache(`home:${userId}`);
-        const response: Meta = {
+        res.status(201).json({
             status: 201,
-            message: data 
-        }
-        res.status(201).json(response)
+            message: data.message,
+            record: data.record,
+        })
 
      } catch (error: unknown) {
         fail(res, error, 400);
@@ -56,6 +64,9 @@ export const deleteSales = async (req: Request, res: Response) => {
     const { sales_id } = req.params;
     try {
         const data = await deleteSalesUser(Number(sales_id), Number(req.user.userId));
+        await clearCache(`sales:${Number(req.user.userId)}`);
+        await clearCache(`batch:${Number(req.user.userId)}`);
+        await clearCache(`home:${Number(req.user.userId)}`);
         const response: Meta = {
             status: 200,
             message: data,

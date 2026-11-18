@@ -4,7 +4,8 @@ CREATE TABLE IF NOT EXISTS usuarios (
     telefono TEXT NOT NULL,
     correo TEXT NOT NULL UNIQUE,
     contrasena TEXT NOT NULL,
-    token TEXT
+    token TEXT,
+    rol TEXT NOT NULL DEFAULT 'usuario' CHECK (rol IN ('usuario', 'superadmin'))
 );
 
 CREATE TABLE IF NOT EXISTS fases (
@@ -50,7 +51,10 @@ CREATE TABLE IF NOT EXISTS lotes (
     fecha_creacion TIMESTAMPTZ NOT NULL,
     fase INTEGER NOT NULL REFERENCES fases(id_fase),
     mortalidad NUMERIC(12, 2) NOT NULL DEFAULT 0,
-    activo BOOLEAN NOT NULL DEFAULT TRUE
+    activo BOOLEAN NOT NULL DEFAULT TRUE,
+    client_id UUID NOT NULL DEFAULT gen_random_uuid() UNIQUE,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    deleted_at TIMESTAMPTZ
 );
 
 CREATE TABLE IF NOT EXISTS costos (
@@ -63,7 +67,10 @@ CREATE TABLE IF NOT EXISTS costos (
     mano_obra NUMERIC(14, 2) NOT NULL DEFAULT 0,
     transporte NUMERIC(14, 2) NOT NULL DEFAULT 0,
     otros NUMERIC(14, 2) NOT NULL DEFAULT 0,
-    fecha_creacion TIMESTAMPTZ NOT NULL
+    fecha_creacion TIMESTAMPTZ NOT NULL,
+    client_id UUID NOT NULL DEFAULT gen_random_uuid() UNIQUE,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    deleted_at TIMESTAMPTZ
 );
 
 CREATE TABLE IF NOT EXISTS alimentacion (
@@ -74,7 +81,10 @@ CREATE TABLE IF NOT EXISTS alimentacion (
     cantidad_kg NUMERIC(12, 2) NOT NULL,
     costo_unitario NUMERIC(14, 2) NOT NULL,
     fecha_creacion TIMESTAMPTZ NOT NULL,
-    id_usuario INTEGER NOT NULL REFERENCES usuarios(id_usuario) ON DELETE CASCADE
+    id_usuario INTEGER NOT NULL REFERENCES usuarios(id_usuario) ON DELETE CASCADE,
+    client_id UUID NOT NULL DEFAULT gen_random_uuid() UNIQUE,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    deleted_at TIMESTAMPTZ
 );
 
 CREATE TABLE IF NOT EXISTS salud_tratamiento (
@@ -83,7 +93,10 @@ CREATE TABLE IF NOT EXISTS salud_tratamiento (
     enfermedad TEXT NOT NULL,
     tratamiento TEXT NOT NULL,
     fecha_creacion TIMESTAMPTZ NOT NULL,
-    id_usuario INTEGER NOT NULL REFERENCES usuarios(id_usuario) ON DELETE CASCADE
+    id_usuario INTEGER NOT NULL REFERENCES usuarios(id_usuario) ON DELETE CASCADE,
+    client_id UUID NOT NULL DEFAULT gen_random_uuid() UNIQUE,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    deleted_at TIMESTAMPTZ
 );
 
 CREATE TABLE IF NOT EXISTS ventas (
@@ -93,7 +106,10 @@ CREATE TABLE IF NOT EXISTS ventas (
     peso_promedio NUMERIC(12, 2) NOT NULL,
     precio_kg NUMERIC(14, 2) NOT NULL,
     fecha_creacion TIMESTAMPTZ NOT NULL,
-    id_usuario INTEGER NOT NULL REFERENCES usuarios(id_usuario) ON DELETE CASCADE
+    id_usuario INTEGER NOT NULL REFERENCES usuarios(id_usuario) ON DELETE CASCADE,
+    client_id UUID NOT NULL DEFAULT gen_random_uuid() UNIQUE,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    deleted_at TIMESTAMPTZ
 );
 
 CREATE TABLE IF NOT EXISTS progreso (
@@ -103,7 +119,10 @@ CREATE TABLE IF NOT EXISTS progreso (
     record_peso_promedio NUMERIC(12, 2) NOT NULL,
     mortalidad NUMERIC(12, 2) NOT NULL,
     id_usuario INTEGER NOT NULL REFERENCES usuarios(id_usuario) ON DELETE CASCADE,
-    fase INTEGER NOT NULL REFERENCES fases(id_fase)
+    fase INTEGER NOT NULL REFERENCES fases(id_fase),
+    client_id UUID NOT NULL DEFAULT gen_random_uuid() UNIQUE,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    deleted_at TIMESTAMPTZ
 );
 
 CREATE TABLE IF NOT EXISTS agenda (
@@ -112,7 +131,10 @@ CREATE TABLE IF NOT EXISTS agenda (
     titulo TEXT NOT NULL,
     descripcion TEXT NOT NULL,
     fecha_evento TIMESTAMPTZ NOT NULL,
-    estado BOOLEAN NOT NULL DEFAULT TRUE
+    estado BOOLEAN NOT NULL DEFAULT TRUE,
+    client_id UUID NOT NULL DEFAULT gen_random_uuid() UNIQUE,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    deleted_at TIMESTAMPTZ
 );
 
 INSERT INTO fases (id_fase, nombre_fase) VALUES
@@ -155,3 +177,11 @@ SELECT setval('raza_id_seq', (SELECT MAX(id) FROM raza));
 SELECT setval('tipo_alimento_id_seq', (SELECT MAX(id) FROM tipo_alimento));
 SELECT setval('marca_alimento_id_seq', (SELECT MAX(id) FROM marca_alimento));
 SELECT setval('enfermedades_id_seq', (SELECT MAX(id) FROM enfermedades));
+
+CREATE INDEX IF NOT EXISTS lotes_usuario_updated_idx ON lotes (id_usuario, updated_at);
+CREATE INDEX IF NOT EXISTS costos_usuario_updated_idx ON costos (id_usuario, updated_at);
+CREATE INDEX IF NOT EXISTS alimentacion_usuario_updated_idx ON alimentacion (id_usuario, updated_at);
+CREATE INDEX IF NOT EXISTS salud_usuario_updated_idx ON salud_tratamiento (id_usuario, updated_at);
+CREATE INDEX IF NOT EXISTS ventas_usuario_updated_idx ON ventas (id_usuario, updated_at);
+CREATE INDEX IF NOT EXISTS progreso_usuario_updated_idx ON progreso (id_usuario, updated_at);
+CREATE INDEX IF NOT EXISTS agenda_usuario_updated_idx ON agenda (id_usuario, updated_at);

@@ -6,6 +6,7 @@ export interface User {
     fullName: string;
     phone: string;
     token: string;
+    rol: string;
 }
 
 export interface UserResponse {

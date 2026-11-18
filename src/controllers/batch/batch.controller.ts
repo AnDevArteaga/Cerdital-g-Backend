@@ -8,6 +8,7 @@ import { Meta } from "../../interfaces/meta.interface";
 import { clearCache } from "../../middleware/cache.middleware";
 import redis from "../../config/redis";
 import { fail } from "../../errors";
+import { optionalClientId } from "../../repositories/client.repository";
 
 export const getBatchById = async (req: Request, res: Response) => {
     const userId = Number(req.user.userId);
@@ -34,19 +35,27 @@ export const getBatchById = async (req: Request, res: Response) => {
 
 export const createBatch = async (req: Request, res: Response) => {
     const userId = Number(req.user.userId);
-    const { batch_name, pigs, race, average_weight, phase } = req.body;
+    const { batch_name, pigs, race, average_weight, phase, client_id, cost_client_id } = req.body;
     try {
-        const data = await createBatchUser(userId, batch_name, pigs, race, average_weight, phase);
+        const data = await createBatchUser(
+            userId,
+            batch_name,
+            pigs,
+            race,
+            average_weight,
+            phase,
+            optionalClientId(client_id),
+            optionalClientId(cost_client_id),
+        );
 
         await clearCache(`batch:${userId}`);
         await clearCache(`home:${userId}`);
 
-        const response: Meta = {
+        res.status(200).json({
             status: 200,
-            message: data,
-            };
-
-        res.status(200).json(response);
+            message: data.message,
+            record: data.record,
+        });
     } catch (error: unknown) {
         fail(res, error, 400);
     }

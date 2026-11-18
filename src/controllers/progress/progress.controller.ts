@@ -9,6 +9,7 @@ import { Progress } from "../../interfaces/progress.interface";
 import { Meta } from "../../interfaces/meta.interface";
 import { clearCache } from "../../middleware/cache.middleware";
 import { fail } from "../../errors";
+import { optionalClientId } from "../../repositories/client.repository";
 
 export const getProgressById = async (req: Request, res: Response) => {
     const userId = Number(req.user.userId);
@@ -30,16 +31,24 @@ export const getProgressById = async (req: Request, res: Response) => {
 
 export const createProgress = async (req: Request, res: Response) => {
     const userId = Number(req.user.userId);
-    const { batch_id, date_weight, weekly_average_weight, mortality, phase } = req.body;
+    const { batch_id, date_weight, weekly_average_weight, mortality, phase, client_id } = req.body;
     try {
-        const data = await createProgressUser(batch_id, date_weight, weekly_average_weight, mortality, phase, userId);
+        const data = await createProgressUser(
+            batch_id,
+            date_weight,
+            weekly_average_weight,
+            mortality,
+            phase,
+            userId,
+            optionalClientId(client_id),
+        );
         await clearCache(`batch:${userId}`);
 
-        const response: Meta = {
+        res.status(200).json({
             status: 200,
-            message: data,
-        };
-        res.status(200).json(response);
+            message: data.message,
+            record: data.record,
+        });
     } catch (error: unknown) {
         fail(res, error, 400);
     }
